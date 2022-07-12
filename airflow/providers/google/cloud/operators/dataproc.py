@@ -18,6 +18,7 @@
 #
 """This module contains Google Dataproc operators."""
 
+import asyncio
 import inspect
 import ntpath
 import os
@@ -31,15 +32,18 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 from google.api_core import operation  # type: ignore
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.api_core.retry import Retry, exponential_sleep_generator
-from google.cloud.dataproc_v1 import Batch, Cluster
+from google.cloud.dataproc_v1 import Batch, Cluster, JobStatus, Job
 from google.protobuf.duration_pb2 import Duration
 from google.protobuf.field_mask_pb2 import FieldMask
+from libcst import And
 
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator, BaseOperatorLink
 from airflow.models.taskinstance import TaskInstance
 from airflow.providers.google.cloud.hooks.dataproc import DataprocHook, DataProcJobBuilder
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
+from airflow.providers.google.cloud.links.dataproc import DATAPROC_CLUSTER_LINK, DATAPROC_JOB_LOG_LINK
+from airflow.triggers.base import BaseTrigger, TriggerEvent
 from airflow.utils import timezone
 
 DATAPROC_BASE_LINK = "https://console.cloud.google.com/dataproc"
@@ -1011,6 +1015,7 @@ class DataprocJobBaseOperator(BaseOperator):
         job_error_states: Optional[Set[str]] = None,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
         asynchronous: bool = False,
+        deferred: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -1039,6 +1044,7 @@ class DataprocJobBaseOperator(BaseOperator):
         self.job = None
         self.dataproc_job_id = None
         self.asynchronous = asynchronous
+        self.deferred = deferred
 
     def create_job_template(self):
         """Initialize `self.job_template` with default values"""
@@ -1076,6 +1082,13 @@ class DataprocJobBaseOperator(BaseOperator):
                 value={'job_id': job_id, 'region': self.region, 'project_id': self.project_id},
             )
 
+            if self.deferred:
+                self.defer(
+                    trigger=DataprocBaseTrigger(
+                        job_id=self.job_id, project_id=self.project_id, region=self.region
+                    ),
+                    method_name="execute_complete",
+                )
             if not self.asynchronous:
                 self.log.info('Waiting for job %s to complete', job_id)
                 self.hook.wait_for_job(job_id=job_id, region=self.region, project_id=self.project_id)
@@ -1084,6 +1097,19 @@ class DataprocJobBaseOperator(BaseOperator):
         else:
             raise AirflowException("Create a job template before")
 
+    def execute_complete(self, context: "Context", event: Any = None) -> None:
+        """
+        Callback for when the trigger fires - returns immediately.
+        Relies on trigger to throw an exception, otherwise it assumes execution was
+        successful.
+        """
+        job: Job = event["job"]
+        if job.status.state == JobStatus.State.ERROR:
+            raise AirflowException(f'Job failed:\n{job}')
+        if job.status.state == JobStatus.State.CANCELLED:
+            raise AirflowException(f'Job was cancelled:\n{job}')
+        self.log.info("%s completed successfully.", self.task_id)
+
     def on_kill(self) -> None:
         """
         Callback called when the operator is killed.
@@ -1091,6 +1117,42 @@ class DataprocJobBaseOperator(BaseOperator):
         """
         if self.dataproc_job_id:
             self.hook.cancel_job(project_id=self.project_id, job_id=self.dataproc_job_id, region=self.region)
+
+
+class DataprocBaseTrigger(BaseTrigger):
+    """
+    TODO: description
+    """
+
+    def __init__(self, job_id, project_id, region, gcp_conn_id, impersonation_chain):
+        super().__init__()
+        self.gcp_conn_id = gcp_conn_id
+        self.impersonation_chain = impersonation_chain
+        self.job_id = job_id
+        self.project_id = project_id
+        self.region = region
+        self.hook = DataprocHook(
+            gcp_conn_id=self.gcp_conn_id, impersonation_chain=self.impersonation_chain, async_client=True
+        )
+
+    def serialize(self):
+        return (
+            "airflow.providers.google.cloud.operators.dataproc.DataprocBaseTrigger",
+            {"job_id": self.job_id, "project_id": self.project_id, "region": self.region},
+        )
+
+    def get_job(self) -> Job:
+        return self.hook.get_job(job_id=self.job_id, project_id=self.project_id, region=self.region)
+
+    def job_finished(self) -> bool:
+        job = self.get_job()
+        state = job.status.state
+        return state in (JobStatus.State.ERROR, JobStatus.State.DONE, JobStatus.State.CANCELLED)
+
+    async def run(self):
+        while self.job_finished():
+            await asyncio.sleep(10)
+        yield TriggerEvent({"job": self.get_job()})
 
 
 class DataprocSubmitPigJobOperator(DataprocJobBaseOperator):
@@ -1900,50 +1962,55 @@ class DataprocInstantiateInlineWorkflowTemplateOperator(BaseOperator):
 
 class DataprocSubmitJobOperator(BaseOperator):
     """
-    Submits a job to a cluster.
+        Submits a job to a cluster.
 
-    :param project_id: Required. The ID of the Google Cloud project that the job belongs to.
-    :type project_id: str
-    :param region: Required. The Cloud Dataproc region in which to handle the request.
-    :type region: str
-    :param location: (To be deprecated). The Cloud Dataproc region in which to handle the request.
-    :type location: str
-    :param job: Required. The job resource.
-        If a dict is provided, it must be of the same form as the protobuf message
-        :class:`~google.cloud.dataproc_v1.types.Job`
-    :type job: Dict
-    :param request_id: Optional. A unique id used to identify the request. If the server receives two
-        ``SubmitJobRequest`` requests with the same id, then the second request will be ignored and the first
-        ``Job`` created and stored in the backend is returned.
-        It is recommended to always set this value to a UUID.
-    :type request_id: str
-    :param retry: A retry object used to retry requests. If ``None`` is specified, requests will not be
-        retried.
-    :type retry: google.api_core.retry.Retry
-    :param timeout: The amount of time, in seconds, to wait for the request to complete. Note that if
-        ``retry`` is specified, the timeout applies to each individual attempt.
-    :type timeout: float
-    :param metadata: Additional metadata that is provided to the method.
-    :type metadata: Sequence[Tuple[str, str]]
-    :param gcp_conn_id:
-    :type gcp_conn_id: str
-    :param impersonation_chain: Optional service account to impersonate using short-term
-        credentials, or chained list of accounts required to get the access_token
-        of the last account in the list, which will be impersonated in the request.
-        If set as a string, the account must grant the originating account
-        the Service Account Token Creator IAM role.
-        If set as a sequence, the identities from the list must grant
-        Service Account Token Creator IAM role to the directly preceding identity, with first
-        account from the list granting this role to the originating account (templated).
-    :type impersonation_chain: Union[str, Sequence[str]]
-    :param asynchronous: Flag to return after submitting the job to the Dataproc API.
-        This is useful for submitting long running jobs and
-        waiting on them asynchronously using the DataprocJobSensor
-    :type asynchronous: bool
-    :param cancel_on_kill: Flag which indicates whether cancel the hook's job or not, when on_kill is called
-    :type cancel_on_kill: bool
-    :param wait_timeout: How many seconds wait for job to be ready. Used only if ``asynchronous`` is False
-    :type wait_timeout: int
+        :param project_id: Required. The ID of the Google Cloud project that the job belongs to.
+        :type project_id: str
+        :param region: Required. The Cloud Dataproc region in which to handle the request.
+        :type region: str
+        :param location: (To be deprecated). The Cloud Dataproc region in which to handle the request.
+        :type location: str
+        :param job: Required. The job resource.
+            If a dict is provided, it must be of the same form as the protobuf message
+            :class:`~google.cloud.dataproc_v1.types.Job`
+        :type job: Dict
+        :param request_id: Optional. A unique id used to identify the request. If the server receives two
+            ``SubmitJobRequest`` requests with the same id, then the second request will be ignored and the first
+            ``Job`` created and stored in the backend is returned.
+            It is recommended to always set this value to a UUID.
+        :type request_id: str
+        :param retry: A retry object used to retry requests. If ``None`` is specified, requests will not be
+            retried.
+        :type retry: google.api_core.retry.Retry
+        :param timeout: The amount of time, in seconds, to wait for the request to complete. Note that if
+            ``retry`` is specified, the timeout applies to each individual attempt.
+        :type timeout: float
+        :param metadata: Additional metadata that is provided to the method.
+        :type metadata: Sequence[Tuple[str, str]]
+        :param gcp_conn_id:
+        :type gcp_conn_id: str
+        :param impersonation_chain: Optional service account to impersonate using short-term
+            credentials, or chained list of accounts required to get the access_token
+            of the last account in the list, which will be impersonated in the request.
+            If set as a string, the account must grant the originating account
+            the Service Account Token Creator IAM role.
+            If set as a sequence, the identities from the list must grant
+            Service Account Token Creator IAM role to the directly preceding identity, with first
+            account from the list granting this role to the originating account (templated).
+        :type impersonation_chain: Union[str, Sequence[str]]
+        :param asynchronous: Flag to return after submitting the job to the Dataproc API.
+            This is useful for submitting long running jobs and
+            waiting on them asynchronously using the DataprocJobSensor
+    <<<<<<< HEAD
+        :type asynchronous: bool
+    =======
+        :param deferred: Flag to deffer the execution after submitting the job to the Dataproc API.
+            Use this flag to run the operation in asynchronuous mode based on Defferable operators API.
+    >>>>>>> 3a5bd4bce (Initial changes)
+        :param cancel_on_kill: Flag which indicates whether cancel the hook's job or not, when on_kill is called
+        :type cancel_on_kill: bool
+        :param wait_timeout: How many seconds wait for job to be ready. Used only if ``asynchronous`` is False
+        :type wait_timeout: int
     """
 
     template_fields = ('project_id', 'region', 'job', 'impersonation_chain', 'request_id')
@@ -1965,6 +2032,7 @@ class DataprocSubmitJobOperator(BaseOperator):
         gcp_conn_id: str = "google_cloud_default",
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
         asynchronous: bool = False,
+        deferred: bool = False,
         cancel_on_kill: bool = True,
         wait_timeout: Optional[int] = None,
         **kwargs,
@@ -1991,6 +2059,7 @@ class DataprocSubmitJobOperator(BaseOperator):
         self.gcp_conn_id = gcp_conn_id
         self.impersonation_chain = impersonation_chain
         self.asynchronous = asynchronous
+        self.deferred = deferred
         self.cancel_on_kill = cancel_on_kill
         self.hook: Optional[DataprocHook] = None
         self.job_id: Optional[str] = None
@@ -2021,6 +2090,11 @@ class DataprocSubmitJobOperator(BaseOperator):
             },
         )
 
+        if self.deferred:
+            self.defer(
+                trigger=DataprocBaseTrigger(job_id=job_id, project_id=self.project_id, region=self.region),
+                method_name="execute_complete",
+            )
         if not self.asynchronous:
             self.log.info('Waiting for job %s to complete', job_id)
             self.hook.wait_for_job(
@@ -2030,6 +2104,19 @@ class DataprocSubmitJobOperator(BaseOperator):
 
         self.job_id = job_id
         return self.job_id
+
+    def execute_complete(self, context: "Context", event: Any = None) -> None:
+        """
+        Callback for when the trigger fires - returns immediately.
+        Relies on trigger to throw an exception, otherwise it assumes execution was
+        successful.
+        """
+        job: Job = event["job"]
+        if job.status.state == JobStatus.State.ERROR:
+            raise AirflowException(f'Job failed:\n{job}')
+        if job.status.state == JobStatus.State.CANCELLED:
+            raise AirflowException(f'Job was cancelled:\n{job}')
+        self.log.info("%s completed successfully.", self.task_id)
 
     def on_kill(self):
         if self.job_id and self.cancel_on_kill:

@@ -210,6 +210,16 @@ class DataprocHook(GoogleBaseHook):
     keyword arguments rather than positional.
     """
 
+    def __init__(
+        self,
+        gcp_conn_id: str = 'google_cloud_default',
+        delegate_to: Optional[str] = None,
+        impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        async_client: bool = False
+    ) -> None:
+        super().__init__(gcp_conn_id, delegate_to, impersonation_chain)
+        self.async_client = async_client
+
     def get_cluster_client(
         self, region: Optional[str] = None, location: Optional[str] = None
     ) -> ClusterControllerClient:
@@ -268,6 +278,9 @@ class DataprocHook(GoogleBaseHook):
 
         return JobControllerClient(
             credentials=self._get_credentials(), client_info=self.client_info, client_options=client_options
+            transport="grpc_asyncio" if self.async_client else "grpc",
+            client_info=CLIENT_INFO,
+            client_options=client_options
         )
 
     def get_batch_client(
