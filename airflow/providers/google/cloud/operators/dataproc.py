@@ -1084,7 +1084,12 @@ class DataprocJobBaseOperator(BaseOperator):
             if self.deferred:
                 self.defer(
                     trigger=DataprocBaseTrigger(
-                        job_id=self.job_id, project_id=self.project_id, region=self.region
+                        job_id=self.job_id,
+                        project_id=self.project_id,
+                        region=self.region,
+                        delegate_to=self.delegate_to,
+                        gcp_conn_id=self.gcp_conn_id,
+                        impersonation_chain=self.impersonation_chain,
                     ),
                     method_name="execute_complete",
                 )
@@ -2055,8 +2060,20 @@ class DataprocSubmitJobOperator(BaseOperator):
 
         if self.deferred:
             self.defer(
-                trigger=DataprocBaseTrigger(job_id=job_id, project_id=self.project_id, region=self.region),
+                trigger=DataprocBaseTrigger(
+                    job_id=self.job_id,
+                    project_id=self.project_id,
+                    region=self.region,
+                    delegate_to=self.delegate_to,
+                    gcp_conn_id=self.gcp_conn_id,
+                    impersonation_chain=self.impersonation_chain,
+                ),
                 method_name="execute_complete",
+            )
+        elif not self.asynchronous:
+            self.log.info('Waiting for job %s to complete', job_id)
+            self.hook.wait_for_job(
+                job_id=job_id, region=self.region, project_id=self.project_id, timeout=self.wait_timeout
             )
         if not self.asynchronous:
             self.log.info('Waiting for job %s to complete', job_id)
