@@ -44,6 +44,7 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.google.cloud.links.dataproc import DATAPROC_CLUSTER_LINK, DATAPROC_JOB_LOG_LINK
 from airflow.triggers.base import BaseTrigger, TriggerEvent
 from airflow.utils import timezone
+from airflow.providers.google.cloud.triggers.dataproc import DataprocBaseTrigger
 
 DATAPROC_BASE_LINK = "https://console.cloud.google.com/dataproc"
 DATAPROC_JOB_LOG_LINK = DATAPROC_BASE_LINK + "/jobs/{job_id}?region={region}&project={project_id}"
