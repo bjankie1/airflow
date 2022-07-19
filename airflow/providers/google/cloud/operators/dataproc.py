@@ -40,8 +40,6 @@ from airflow.models import BaseOperator, BaseOperatorLink
 from airflow.models.taskinstance import TaskInstance
 from airflow.providers.google.cloud.hooks.dataproc import DataprocHook, DataProcJobBuilder
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
-from airflow.providers.google.cloud.operators.dataproc import DATAPROC_CLUSTER_LINK, DATAPROC_JOB_LOG_LINK
-from airflow.triggers.base import BaseTrigger, TriggerEvent
 from airflow.utils import timezone
 from airflow.providers.google.cloud.triggers.dataproc import DataprocBaseTrigger
 
