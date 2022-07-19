@@ -2062,7 +2062,6 @@ class DataprocSubmitJobOperator(BaseOperator):
                     job_id=self.job_id,
                     project_id=self.project_id,
                     region=self.region,
-                    delegate_to=self.delegate_to,
                     gcp_conn_id=self.gcp_conn_id,
                     impersonation_chain=self.impersonation_chain,
                 ),
