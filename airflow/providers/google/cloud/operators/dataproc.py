@@ -1099,7 +1099,7 @@ class DataprocJobBaseOperator(BaseOperator):
         else:
             raise AirflowException("Create a job template before")
 
-    def execute_complete(self, context: "Context", event: Any = None) -> None:
+    def execute_complete(self, context, event=None) -> None:
         """
         Callback for when the trigger fires - returns immediately.
         Relies on trigger to throw an exception, otherwise it assumes execution was
@@ -2083,7 +2083,7 @@ class DataprocSubmitJobOperator(BaseOperator):
         self.job_id = job_id
         return self.job_id
 
-    def execute_complete(self, context: "Context", event: Any = None) -> None:
+    def execute_complete(self, context, event=None) -> None:
         """
         Callback for when the trigger fires - returns immediately.
         Relies on trigger to throw an exception, otherwise it assumes execution was
