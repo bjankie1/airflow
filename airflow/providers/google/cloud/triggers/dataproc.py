@@ -57,6 +57,7 @@ class DataprocBaseTrigger(BaseTrigger):
     async def run(self):
         while True:
             job = self.get_job(project_id=self.project_id, region=self.region, job_id=self.job_id)
+            self.log("Job status: %s", job)
             state = job.status.state
             self.log.info("Job %s state is: %s", self.job_id, state)
             if state in (JobStatus.State.ERROR, JobStatus.State.DONE, JobStatus.State.CANCELLED):
