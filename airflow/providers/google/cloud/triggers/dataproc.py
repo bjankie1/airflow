@@ -58,6 +58,7 @@ class DataprocBaseTrigger(BaseTrigger):
         while True:
             job = self.get_job()
             state = job.status.state
+            self.log.info("Job %s state is: %s", self.job_id, state)
             if state in (JobStatus.State.ERROR, JobStatus.State.DONE, JobStatus.State.CANCELLED):
                 if state in (JobStatus.State.DONE, JobStatus.State.CANCELLED):
                     break
