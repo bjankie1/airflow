@@ -56,7 +56,19 @@ class DataprocBaseTrigger(BaseTrigger):
 
     async def run(self):
         while True:
-            job = await self.hook.get_job(project_id=self.project_id, region=self.region, job_id=self.job_id)
-            self.log.info("Job %s status: %s", self.job_id, job)
-            break
+            job: Job = await self.hook.get_job(
+                project_id=self.project_id, region=self.region, job_id=self.job_id
+            )
+            state = job.status.state
+            self.log.info("Dataproc job: %s is in state: %s", self.job_id, state)
+            if state in (JobStatus.State.ERROR, JobStatus.State.DONE, JobStatus.State.CANCELLED):
+                if state in (JobStatus.State.DONE, JobStatus.State.CANCELLED):
+                    break
+                elif state == JobStatus.State.ERROR:
+                    raise AirflowException(f"Dataproc job execution failed {self.job_id}")
+                else:
+                    raise AirflowException(
+                        f"Dataproc job execution finished in uknknown state {state} {self.job_id}"
+                    )
+            await asyncio.sleep(self.pooling_period_seconds)
         yield TriggerEvent({"job_id": self.job_id, "job_status": job.status.state})
