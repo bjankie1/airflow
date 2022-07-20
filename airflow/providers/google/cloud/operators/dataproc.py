@@ -2059,7 +2059,7 @@ class DataprocSubmitJobOperator(BaseOperator):
         if self.deferred:
             self.defer(
                 trigger=DataprocBaseTrigger(
-                    job_id=self.job_id,
+                    job_id=job_id,
                     project_id=self.project_id,
                     region=self.region,
                     gcp_conn_id=self.gcp_conn_id,
@@ -2088,11 +2088,12 @@ class DataprocSubmitJobOperator(BaseOperator):
         Relies on trigger to throw an exception, otherwise it assumes execution was
         successful.
         """
-        job: Job = event["job"]
-        if job.status.state == JobStatus.State.ERROR:
-            raise AirflowException(f'Job failed:\n{job}')
-        if job.status.state == JobStatus.State.CANCELLED:
-            raise AirflowException(f'Job was cancelled:\n{job}')
+        job_status = event["job_status"]
+        job_id = event["job_id"]
+        if job_status.state == JobStatus.State.ERROR:
+            raise AirflowException(f'Job failed:\n{job_id}')
+        if job_status.state == JobStatus.State.CANCELLED:
+            raise AirflowException(f'Job was cancelled:\n{job_id}')
         self.log.info("%s completed successfully.", self.task_id)
 
     def on_kill(self):
