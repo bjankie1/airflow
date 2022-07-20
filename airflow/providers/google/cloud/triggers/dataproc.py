@@ -71,4 +71,4 @@ class DataprocBaseTrigger(BaseTrigger):
                         f"Dataproc job execution finished in uknknown state {state} {self.job_id}"
                     )
             await asyncio.sleep(self.pooling_period_seconds)
-        yield TriggerEvent({"job_id": self.job_id, "job_status": job.status.state})
+        yield TriggerEvent({"job_id": self.job_id, "job_state": state})

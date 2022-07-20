@@ -2088,11 +2088,11 @@ class DataprocSubmitJobOperator(BaseOperator):
         Relies on trigger to throw an exception, otherwise it assumes execution was
         successful.
         """
-        job_status = event["job_status"]
+        job_state = event["job_state"]
         job_id = event["job_id"]
-        if job_status.state == JobStatus.State.ERROR:
+        if job_state == JobStatus.State.ERROR:
             raise AirflowException(f'Job failed:\n{job_id}')
-        if job_status.state == JobStatus.State.CANCELLED:
+        if job_state == JobStatus.State.CANCELLED:
             raise AirflowException(f'Job was cancelled:\n{job_id}')
         self.log.info("%s completed successfully.", self.task_id)
 
