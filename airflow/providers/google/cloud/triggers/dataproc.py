@@ -56,7 +56,7 @@ class DataprocBaseTrigger(BaseTrigger):
 
     async def run(self):
         while True:
-            job = self.get_job(project_id=self.project_id, region=self.region, job_id=self.job_id)
+            job = self.hook.get_job(project_id=self.project_id, region=self.region, job_id=self.job_id)
             self.log("Job status: %s", job)
             break
         yield TriggerEvent({"job": job})
