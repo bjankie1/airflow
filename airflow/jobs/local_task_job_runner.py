@@ -122,7 +122,7 @@ class LocalTaskJobRunner(BaseJobRunner, LoggingMixin):
             self.handle_task_exit(128 + signum)
 
         def segfault_signal_handler(signum, frame):
-            """Set sigmentation violation signal handler."""
+            """Set segmentation violation signal handler."""
             self.log.critical(SIGSEGV_MESSAGE)
             self.task_runner.terminate()
             self.handle_task_exit(128 + signum)
@@ -162,11 +162,6 @@ class LocalTaskJobRunner(BaseJobRunner, LoggingMixin):
         return_code = None
         try:
             self.task_runner.start()
-            local_task_job_heartbeat_sec = conf.getint("scheduler", "local_task_job_heartbeat_sec")
-            if local_task_job_heartbeat_sec < 1:
-                heartbeat_time_limit = conf.getint("scheduler", "scheduler_zombie_task_threshold")
-            else:
-                heartbeat_time_limit = local_task_job_heartbeat_sec
 
             # LocalTaskJob should not run callbacks, which are handled by TaskInstance._run_raw_task
             # 1, LocalTaskJob does not parse DAG, thus cannot run callbacks
@@ -178,21 +173,7 @@ class LocalTaskJobRunner(BaseJobRunner, LoggingMixin):
             # If LocalTaskJob receives SIGTERM, LocalTaskJob passes SIGTERM to _run_raw_task
             # If the state of task_instance is changed, LocalTaskJob sends SIGTERM to _run_raw_task
             while not self.terminating:
-                # Monitor the task to see if it's done. Wait in a syscall
-                # (`os.wait`) for as long as possible so we notice the
-                # subprocess finishing as quick as we can
-                max_wait_time = max(
-                    0,  # Make sure this value is never negative,
-                    min(
-                        (
-                            heartbeat_time_limit
-                            - (timezone.utcnow() - self.job.latest_heartbeat).total_seconds() * 0.75
-                        ),
-                        self.job.heartrate if self.job.heartrate is not None else heartbeat_time_limit,
-                    ),
-                )
-
-                return_code = self.task_runner.return_code(timeout=max_wait_time)
+                return_code = self.task_runner.return_code(timeout=self.job.max_task_wait_time())
                 if return_code is not None:
                     self.handle_task_exit(return_code)
                     return return_code
@@ -204,14 +185,10 @@ class LocalTaskJobRunner(BaseJobRunner, LoggingMixin):
                 # If it's been too long since we've heartbeat, then it's possible that
                 # the scheduler rescheduled this task, so kill launched processes.
                 # This can only really happen if the worker can't read the DB for a long time
-                time_since_last_heartbeat = (timezone.utcnow() - self.job.latest_heartbeat).total_seconds()
-                if time_since_last_heartbeat > heartbeat_time_limit:
+                try:
+                    self.job.validate_task_heartbeat_time_exceeded()
+                finally:
                     Stats.incr("local_task_job_prolonged_heartbeat_failure", 1, 1)
-                    self.log.error("Heartbeat time limit exceeded!")
-                    raise AirflowException(
-                        f"Time since last heartbeat({time_since_last_heartbeat:.2f}s) exceeded limit "
-                        f"({heartbeat_time_limit}s)."
-                    )
             return return_code
         finally:
             self.on_kill()
@@ -240,6 +217,7 @@ class LocalTaskJobRunner(BaseJobRunner, LoggingMixin):
         self.task_runner.terminate()
         self.task_runner.on_finish()
 
+    # TODO: modify to get the state from JobStateManager
     @provide_session
     def heartbeat_callback(self, session: Session = NEW_SESSION) -> None:
         """Self destruct task if state has been moved away from running externally."""

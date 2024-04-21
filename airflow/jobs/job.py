@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from __future__ import annotations
+from datetime import timedelta
 
 from functools import cached_property
 from time import sleep
@@ -144,6 +145,34 @@ class Job(Base, LoggingMixin):
             grace_multiplier=grace_multiplier,
         )
 
+    @cached_property
+    def task_heartbeat_time_limit():
+        local_task_job_heartbeat_sec = conf.getint("scheduler", "local_task_job_heartbeat_sec")
+        if local_task_job_heartbeat_sec < 1:
+            return conf.getint("scheduler", "scheduler_zombie_task_threshold")
+        else:
+            return local_task_job_heartbeat_sec
+
+    def max_task_wait_time(self):
+        heartbeat_time_limit = self.task_heartbeat_time_limit
+
+        return max(
+            0,  # Make sure this value is never negative,
+            min(
+                (heartbeat_time_limit - (timezone.utcnow() - self.latest_heartbeat).total_seconds() * 0.75),
+                self.job.heartrate if self.heartrate is not None else heartbeat_time_limit,
+            ),
+        )
+
+    def validate_task_heartbeat_time_exceeded(self):
+        time_since_last_heartbeat = (timezone.utcnow() - self.latest_heartbeat).total_seconds()
+        if time_since_last_heartbeat > self.task_heartbeat_time_limit:
+            self.log.error("Heartbeat time limit exceeded!")
+            raise AirflowException(
+                f"Time since last heartbeat({time_since_last_heartbeat:.2f}s) exceeded limit "
+                f"({self.task_heartbeat_time_limit}s)."
+            )
+
     @provide_session
     def kill(self, session: Session = NEW_SESSION) -> NoReturn:
         """Handle on_kill callback and updates state in database."""
@@ -223,6 +252,15 @@ class Job(Base, LoggingMixin):
                 )
             # We didn't manage to heartbeat, so make sure that the timestamp isn't updated
             self.latest_heartbeat = previous_heartbeat
+
+    @staticmethod
+    def jobs_latest_heartbeat(job_ids):
+        """Fetches latest heartbeats for number of jobs"""
+        # TODO: implement - delegate. Instantiate corresponding JobStateManager based on conf
+        pass
+
+    def find_zombie_tasks(limit_dttm):
+        pass
 
     @provide_session
     def prepare_for_execution(self, session: Session = NEW_SESSION):
@@ -354,6 +392,7 @@ class Job(Base, LoggingMixin):
 
 @internal_api_call
 @provide_session
+# TODO delegate
 def most_recent_job(job_type: str, session: Session = NEW_SESSION) -> Job | JobPydantic | None:
     """
     Return the most recent job of this type, if any, based on last heartbeat received.
