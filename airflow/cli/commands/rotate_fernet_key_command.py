@@ -46,10 +46,7 @@ def rotate_fernet_key(args):
 
 
 def rotate_items_in_batches_v1(session, model_class, filter_condition=None, batch_size=100):
-    """Rotates Fernet keys for items of a given model in batches to avoid excessive memory usage.
-
-    This function is a replacement for yield_per, which is not available in SQLAlchemy 1.x.
-    """
+    """This function is a replacement for yield_per, which is not available in SQLAlchemy 1.x."""
     offset = 0
     while True:
         query = select(model_class)
@@ -65,10 +62,7 @@ def rotate_items_in_batches_v1(session, model_class, filter_condition=None, batc
 
 
 def rotate_items_in_batches_v2(session, model_class, filter_condition=None, batch_size=100):
-    """Rotates Fernet keys for items of a given model in batches to avoid excessive memory usage.
-
-    This function is taking advantage of yield_per available in SQLAlchemy 2.x.
-    """
+    """This function is taking advantage of yield_per available in SQLAlchemy 2.x."""
     while True:
         query = select(model_class)
         if filter_condition is not None:
