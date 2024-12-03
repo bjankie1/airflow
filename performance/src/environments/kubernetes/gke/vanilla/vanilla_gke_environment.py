@@ -620,13 +620,13 @@ class VanillaGKEEnvironment(GKEBasedEnvironment):
         to move the performance test forward.
         """
         return {
-            State.NONE: Action(self.prepare_gke_cluster, sleep_time=None, retryable=True),
+            # State.NONE: Action(self.prepare_gke_cluster, sleep_time=None, retryable=True),
             State.WAIT_UNTIL_READY: Action(self.is_gke_cluster_ready, sleep_time=30.0, retryable=True),
             State.WAIT_UNTIL_CAN_BE_DELETED: Action(
                 self.is_gke_cluster_ready, sleep_time=30.0, retryable=True
             ),
-            State.DELETING_ENV: Action(self._wait_for_deletion, sleep_time=20.0, retryable=True),
-            State.UPDATE_ENV_INFO: Action(self._update_environment_info, sleep_time=10.0, retryable=True),
+            # State.DELETING_ENV: Action(self._wait_for_deletion, sleep_time=20.0, retryable=True),
+            # State.UPDATE_ENV_INFO: Action(self._update_environment_info, sleep_time=10.0, retryable=True),
             State.WAIT_FOR_DAG: Action(self.check_if_dags_have_loaded, sleep_time=30.0, retryable=True),
             State.UNPAUSE_DAG: Action(self.unpause_dags, sleep_time=20.0, retryable=True),
             State.WAIT_FOR_DAG_RUN_EXEC: Action(
