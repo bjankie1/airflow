@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -20,6 +23,7 @@
 Module containing definition of Cloud Monitoring metrics collected during performance tests.
 """
 
+<<<<<<< HEAD
 import enum
 
 from typing import Dict, List
@@ -37,6 +41,13 @@ from environments.kubernetes.gke.collecting_results.monitoring_api.monitored_res
     ResourceType,
 )
 
+=======
+from __future__ import annotations
+
+import enum
+from typing import Dict, List
+
+>>>>>>> 8941939b2e (instance framework)
 RESOURCE_LABEL_HIERARCHY = [
     "project_id",
     "location",
@@ -101,7 +112,10 @@ def get_monitored_resources_map(cluster_id: str, airflow_namespace_prefix: str) 
         required to execute time series listing requests.
     :rtype: Dict[ResourceType, Dict]
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     monitored_resources = {
         ResourceType.NODE: {
             "resource_groups": [
@@ -317,7 +331,10 @@ def get_merging_order() -> List[ResourceType]:
     :return: a list of ResourceType
     :rtype: List[ResourceType]
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     # we use a reversed order of resource types to start merging from the types
     # further in the hierarchy and avoid duplicating metric columns in the process;
     # for example, with POD type being mergeable into CONTAINER type and CLUSTER type
@@ -328,6 +345,7 @@ def get_merging_order() -> List[ResourceType]:
     resource_types_reversed.reverse()
 
     return resource_types_reversed
+<<<<<<< HEAD
 
 
 def prepare_metrics_dataframe(
@@ -371,3 +389,5 @@ def prepare_metrics_dataframe(
     metrics_df = join_resource_dataframes(resource_data, start_date)
 
     return metrics_df
+=======
+>>>>>>> 8941939b2e (instance framework)

@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -20,11 +23,17 @@
 Class dedicated to executing remote Airflow commands and python trampolines on Kubernetes pods.
 """
 
+<<<<<<< HEAD
+=======
+from __future__ import annotations
+
+>>>>>>> 8941939b2e (instance framework)
 import ast
 import inspect
 import logging
 import textwrap
 from collections import OrderedDict
+<<<<<<< HEAD
 from typing import Any, Callable, Optional
 
 from kubernetes import client
@@ -37,6 +46,21 @@ from metrics.airflow_metrics import (
     get_python_version,
 )
 from metrics.airflow_metrics import get_dag_runs_count, get_dags_count, unpause_dags
+=======
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from environments.kubernetes.airflow_pod_operations import (
+    collect_dag_run_statistics,
+    get_airflow_configuration,
+    get_airflow_version,
+    get_dag_runs_count,
+    get_dags_count,
+    get_python_version,
+    unpause_dags,
+)
+from kubernetes import client
+from kubernetes.stream import stream
+>>>>>>> 8941939b2e (instance framework)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -59,7 +83,11 @@ print(result)
 
 class RemoteRunner:
     """
+<<<<<<< HEAD
     Class dedicated to executing payloads on found kubernetes pod.
+=======
+    Class dedicated to executing payloads on found GKE pod
+>>>>>>> 8941939b2e (instance framework)
     """
 
     # pylint: disable=too-many-arguments
@@ -76,6 +104,7 @@ class RemoteRunner:
 
         :param core_api: an instance of kubernetes python core v1 api which can be used
             to execute payloads on pod.
+<<<<<<< HEAD
         :param namespace: namespace the targeted pod is located on.
         :param pod_prefix: prefix of the ready pod, on which payload should be executed.
         :param container: name of the container where payload should be executed.
@@ -84,6 +113,20 @@ class RemoteRunner:
             DEFAULT_EXEC_REQUEST_TIMEOUT seconds.
         """
 
+=======
+        :type core_api: client.api.core_v1_api.CoreV1Api
+        :param namespace: namespace the targeted pod is located on.
+        :type namespace: str
+        :param pod_prefix: prefix of the ready pod, on which payload should be executed.
+        :type pod_prefix: str
+        :param container: name of the container where payload should be executed.
+        :type container: str
+        :param default_request_timeout: the default time within which the remote commands executed
+            by this RemoteRunner instance must finish. If not provided, it will be set to
+            DEFAULT_EXEC_REQUEST_TIMEOUT seconds.
+        :type default_request_timeout: float
+        """
+>>>>>>> 8941939b2e (instance framework)
         self.core_api = core_api
         self.namespace = namespace
         self.pod_prefix = pod_prefix
@@ -98,10 +141,18 @@ class RemoteRunner:
 
         :param request_timeout: time within which the connection must be closed
             and response returned. If not provided, the default value is used.
+<<<<<<< HEAD
 
         :return: string with the contents of the standard output of the pod
         """
 
+=======
+        :type request_timeout: float
+
+        :return: string with the contents of the standard output of the pod
+        :rtype: str
+        """
+>>>>>>> 8941939b2e (instance framework)
         exec_command = ["airflow", "resetdb", "-y"]
 
         return self.run_command(exec_command, request_timeout)
@@ -113,10 +164,17 @@ class RemoteRunner:
         provided either as positional or keyword arguments.
 
         :return: number of DAGs beginning with provided prefix found on instance.
+<<<<<<< HEAD
 
         :raises: ValueError: if response from cluster could not be converted to integer type.
         """
 
+=======
+        :rtype: int
+
+        :raises: ValueError: if response from cluster could not be converted to integer type.
+        """
+>>>>>>> 8941939b2e (instance framework)
         response = self.run_python_trampoline(get_dags_count, args, kwargs)
 
         try:
@@ -133,7 +191,10 @@ class RemoteRunner:
         :return: string with the contents of the standard output of the pod
         :rtype: str
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         response = self.run_python_trampoline(unpause_dags, args, kwargs)
 
         return response
@@ -149,7 +210,10 @@ class RemoteRunner:
 
         :raises: ValueError: if response from cluster could not be converted to int.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         response = self.run_python_trampoline(get_dag_runs_count, args, kwargs)
 
         try:
@@ -167,7 +231,10 @@ class RemoteRunner:
             in which they should appear in the results dataframe.
         :rtype: OrderedDict
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         response = self.run_python_trampoline(collect_dag_run_statistics, args, kwargs)
 
         # List is returned from k8s with single quotes, that is why there is no loading json here
@@ -182,7 +249,10 @@ class RemoteRunner:
             in which they should appear in the results dataframe.
         :rtype: OrderedDict
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         response = self.run_python_trampoline(get_airflow_configuration, (), {})
 
         # List is returned from k8s with single quotes, that is why there is no loading json here
@@ -196,7 +266,10 @@ class RemoteRunner:
         :return: string with full version of python used on pod.
         :rtype: str
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         # this form of getting python version is used as it returns the version as simple string, so
         # no additional formatting of response is needed
         return self.run_python_trampoline(get_python_version, (), {})
@@ -208,20 +281,29 @@ class RemoteRunner:
         :return: a string with version of Apache Airflow installed on pod.
         :rtype: str
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         return self.run_python_trampoline(get_airflow_version, (), {})
 
     def run_python_trampoline(
         self,
         method: Callable,
+<<<<<<< HEAD
         args: tuple[Any, ...],
         kwargs: dict,
+=======
+        args: Tuple[Any, ...],
+        kwargs: Dict,
+>>>>>>> 8941939b2e (instance framework)
         request_timeout: Optional[float] = None,
     ) -> str:
         """
         Prepares and runs the command which executes python method with specified arguments on pod.
 
         :param method: function to be executed on pod.
+<<<<<<< HEAD
         :param args: tuple with positional arguments of the method.
         :param kwargs: dict with keyword arguments of the method.
         :param request_timeout: time within which the connection must be closed
@@ -230,6 +312,20 @@ class RemoteRunner:
         :return: string with the contents of the standard output of the pod
         """
 
+=======
+        :type method: Callable
+        :param args: tuple with positional arguments of the method.
+        :type args: Tuple[Any, ...]
+        :param kwargs: dict with keyword arguments of the method.
+        :type kwargs: Dict
+        :param request_timeout: time within which the connection must be closed
+            and response returned. If not provided, the default value is used.
+        :type request_timeout: float
+
+        :return: string with the contents of the standard output of the pod
+        :rtype: str
+        """
+>>>>>>> 8941939b2e (instance framework)
         python_code = self.fill_python_trampoline_template(method, args, kwargs)
 
         exec_command = ["python", "-c", python_code]
@@ -237,6 +333,7 @@ class RemoteRunner:
         return self.run_command(exec_command, request_timeout)
 
     @staticmethod
+<<<<<<< HEAD
     def fill_python_trampoline_template(method: Callable, args: tuple[Any, ...], kwargs: dict) -> str:
         """
         Fills `PYTHON_TRAMPOLINE_TEMPLATE` with code of a method that is to be executed on pod
@@ -250,6 +347,24 @@ class RemoteRunner:
             args and kwargs and print the results to standard output
         """
 
+=======
+    def fill_python_trampoline_template(method: Callable, args: Tuple[Any, ...], kwargs: Dict) -> str:
+        """
+        Fills PYTHON_TRAMPOLINE_TEMPLATE with code of a method that is to be executed on pod
+        as well as args and kwargs for it.
+
+        :param method: function to be executed on pod.
+        :type method: Callable
+        :param args: tuple with positional arguments of the method.
+        :type args: Tuple[Any, ...]
+        :param kwargs: dict with keyword arguments of the method.
+        :type kwargs: Dict
+
+        :return: string with python code which, when run on pod, will execute the method with given
+            args and kwargs and print the results to standard output
+        :rtype: str
+        """
+>>>>>>> 8941939b2e (instance framework)
         log.info("Filling the trampoline template for method: %s", method.__name__)
 
         python_code = PYTHON_TRAMPOLINE_TEMPLATE.format(
@@ -261,15 +376,29 @@ class RemoteRunner:
 
         return python_code
 
+<<<<<<< HEAD
     def run_command(self, exec_command: list[str], request_timeout: Optional[float] = None) -> str:
+=======
+    def run_command(self, exec_command: List[str], request_timeout: Optional[float] = None) -> str:
+>>>>>>> 8941939b2e (instance framework)
         """
         Executes given command on found pod and returns the results.
 
         :param exec_command: remote command to execute in form of a list of arguments.
+<<<<<<< HEAD
         :param request_timeout: time within which the connection must be closed
             and response returned. If not provided, the default value is used.
 
         :return: string with the contents of the standard output of the pod
+=======
+        :type exec_command: List[str]
+        :param request_timeout: time within which the connection must be closed
+            and response returned. If not provided, the default value is used.
+        :type request_timeout: float
+
+        :return: string with the contents of the standard output of the pod
+        :rtype: str
+>>>>>>> 8941939b2e (instance framework)
 
         :raises: ConnectionError
             if return code signifies an error
@@ -312,7 +441,11 @@ class RemoteRunner:
 
         if return_code == 1:
             raise ConnectionError(
+<<<<<<< HEAD
                 f"Error encountered during remote command execution. " f"stderr contents:\n{error}"
+=======
+                f"Error encountered during remote command execution. stderr contents:\n{error}"
+>>>>>>> 8941939b2e (instance framework)
             )
         if return_code is None:
             raise ConnectionError(
@@ -329,10 +462,17 @@ class RemoteRunner:
         Finds the first ready pod with the given prefix in given namespace.
 
         :return: first of found pods.
+<<<<<<< HEAD
 
         :raises: ValueError: if no ready pods were found.
         """
 
+=======
+        :rtype: str
+
+        :raises: ValueError: if no ready pods were found.
+        """
+>>>>>>> 8941939b2e (instance framework)
         log.info(
             "Collecting pod prefixed with '%s' from namespace '%s'.",
             self.pod_prefix,

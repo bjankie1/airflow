@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -20,6 +23,11 @@
 Class and methods used to communicate with Google Cloud Monitoring API.
 """
 
+<<<<<<< HEAD
+=======
+from __future__ import annotations
+
+>>>>>>> 8941939b2e (instance framework)
 import datetime
 import itertools
 from typing import Dict, List, Optional, Union
@@ -36,7 +44,10 @@ from google.cloud.monitoring_v3.types import (
 )
 from google.protobuf import timestamp_pb2
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
 ALIGNMENT_PERIOD = {"seconds": 60}
 METRIC_KINDS = ["GAUGE", "DELTA", "CUMULATIVE"]
 VALUE_TYPES = [
@@ -70,7 +81,10 @@ def convert_to_full_minutes_timestamp(date_string: str, round_up: bool = False) 
     :return: number of seconds passed since January 1, 1970 until date_string.
     :rtype: float
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     date = pytz.utc.localize(datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S.%f"))
 
     equal_timestamp = int(date.timestamp())
@@ -94,7 +108,10 @@ def convert_int_to_metric_kind(metric_kind_value: int) -> str:
 
     :raises: TypeError: if the int value does not match any of known metric kinds.
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     for metric_kind in METRIC_KINDS:
         if metric_kind_value == getattr(TypedValue, metric_kind):
             return metric_kind
@@ -114,7 +131,10 @@ def get_typed_value(typed_value: TypedValue) -> Union[bool, Distribution, float,
 
     :raises: TypeError: if TypedValue does not have a field for any of the known value types.
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     for value_type in VALUE_TYPES:
         if typed_value._pb.HasField(value_type):
             return getattr(typed_value, value_type)
@@ -134,7 +154,10 @@ class MonitoringApi:
         :param project_id: project_id that will be used when executing requests.
         :type project_id: str
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         self.client = monitoring_v3.MetricServiceClient()
         self.project_id = project_id
 
@@ -163,7 +186,10 @@ class MonitoringApi:
         :return: list of all collected TimeSeries instances.
         :rtype: List[TimeSeries]
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         interval = self.get_time_interval(start_date, end_date)
 
         collected_time_series = []
@@ -218,7 +244,10 @@ class MonitoringApi:
             to execute time series listing request.
         :rtype: TimeInterval
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         start_date_seconds = convert_to_full_minutes_timestamp(start_date)
         end_date_seconds = convert_to_full_minutes_timestamp(end_date, round_up=True)
 
@@ -243,7 +272,10 @@ class MonitoringApi:
         :return: an object describing how to aggregate the time series of given metric.
         :rtype: Aggregation
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         metric_kind = self.get_metric_kind_of_metric_type(metric_type)
 
         # GAUGE metrics are aligned by calculating a mean of points belonging to the same
@@ -277,14 +309,21 @@ class MonitoringApi:
         :raises: ValueError: if the provided metric type does not have exactly one matching
             MetricDescriptor.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         metric_kind_values = [
             metric.metric_kind for metric in self.metric_descriptors if metric.type == metric_type
         ]
 
         if len(metric_kind_values) != 1:
             raise ValueError(
+<<<<<<< HEAD
                 f"Could not find a metric kind for {metric_type} " f"amongst collected metric descriptors."
+=======
+                f"Could not find a metric kind for {metric_type} amongst collected metric descriptors."
+>>>>>>> 8941939b2e (instance framework)
             )
 
         return convert_int_to_metric_kind(metric_kind_values[0])
@@ -322,7 +361,10 @@ class MonitoringApi:
             matching the filter.
         :rtype: GRPCIterator
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         results = self.client.list_time_series(
             name=self.client.project_path(self.project_id),
             filter_=self.get_filter(metric_type, resource_type, metric_label_filters, resource_label_filters),
@@ -362,11 +404,17 @@ class MonitoringApi:
         :return: a monitoring_filter that can be used to execute time series listing request.
         :rtype: str
         """
+<<<<<<< HEAD
 
         label_filters = []
 
         if metric_label_filters:
 
+=======
+        label_filters = []
+
+        if metric_label_filters:
+>>>>>>> 8941939b2e (instance framework)
             for label, value in metric_label_filters.items():
                 if label.endswith(PREFIX_LABEL_INDICATOR):
                     label_filters.append(f'metric.label.{label[:-(len(PREFIX_LABEL_INDICATOR))]} : "{value}"')
@@ -374,7 +422,10 @@ class MonitoringApi:
                     label_filters.append(f'metric.label.{label} = "{value}"')
 
         if resource_label_filters:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
             for label, value in resource_label_filters.items():
                 if label.endswith(PREFIX_LABEL_INDICATOR):
                     label_filters.append(
@@ -412,7 +463,10 @@ class MonitoringApi:
         :return: a list with preprocessed TimeSeries objects.
         :rtype: List[TimeSeries]
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         time_series_list = []
         for page in iterator.pages:
             for time_series in page:

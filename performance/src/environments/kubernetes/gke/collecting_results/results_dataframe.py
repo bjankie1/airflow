@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -21,6 +24,11 @@ Methods used to combine information regarding performance test
 collected from different sources into a single dataframe.
 """
 
+<<<<<<< HEAD
+=======
+from __future__ import annotations
+
+>>>>>>> 8941939b2e (instance framework)
 import getpass
 import logging
 import uuid
@@ -28,7 +36,10 @@ from collections import OrderedDict
 from typing import Iterable, Union
 
 import pandas as pd
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
 from environments.kubernetes.gke.collecting_results.metrics_dataframe import (
     prepare_metrics_dataframe,
 )
@@ -44,7 +55,11 @@ def prepare_results_dataframe(
     cluster_id: str,
     airflow_namespace_prefix: str,
     environment_columns: OrderedDict,
+<<<<<<< HEAD
     performance_dag_columns: OrderedDict,
+=======
+    elastic_dag_columns: OrderedDict,
+>>>>>>> 8941939b2e (instance framework)
     airflow_configuration: OrderedDict,
     airflow_statistics: OrderedDict,
 ) -> pd.DataFrame:
@@ -61,8 +76,13 @@ def prepare_results_dataframe(
     :type airflow_namespace_prefix: str
     :param environment_columns: a dict containing columns with test environment configuration.
     :type environment_columns: OrderedDict
+<<<<<<< HEAD
     :param performance_dag_columns: a dict containing columns with elastic dag environment variables.
     :type performance_dag_columns: OrderedDict
+=======
+    :param elastic_dag_columns: a dict containing columns with elastic dag environment variables.
+    :type elastic_dag_columns: OrderedDict
+>>>>>>> 8941939b2e (instance framework)
     :param airflow_configuration: a dict containing columns with airflow configuration
         environment variables.
     :type airflow_configuration: OrderedDict
@@ -73,7 +93,10 @@ def prepare_results_dataframe(
     :return: pandas Dataframe containing combined information about performance test.
     :rtype: pd.DataFrame
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     name_to_hash = "__".join(
         [
             environment_columns["environment_name"],
@@ -106,7 +129,11 @@ def prepare_results_dataframe(
     for dictionary in [
         environment_columns,
         airflow_configuration,
+<<<<<<< HEAD
         performance_dag_columns,
+=======
+        elastic_dag_columns,
+>>>>>>> 8941939b2e (instance framework)
         airflow_statistics,
     ]:
         for column_name in dictionary:
@@ -146,10 +173,16 @@ def add_column_to_dataframe(
     :return: a location incremented by 1 if column was inserted and the same location otherwise.
     :rtype: int
     """
+<<<<<<< HEAD
 
     if column_name in dataframe.columns:
         log.warning(
             "Column '%s' is already present in results dataframe. " "Column was not overwritten.",
+=======
+    if column_name in dataframe.columns:
+        log.warning(
+            "Column '%s' is already present in results dataframe. Column was not overwritten.",
+>>>>>>> 8941939b2e (instance framework)
             column_name,
         )
         return location

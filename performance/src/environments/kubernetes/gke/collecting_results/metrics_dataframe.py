@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -21,12 +24,18 @@ Methods used to prepare pandas dataframe using time series data with metrics
 collected from Cloud Monitoring API.
 """
 
+<<<<<<< HEAD
+=======
+from __future__ import annotations
+
+>>>>>>> 8941939b2e (instance framework)
 import logging
 from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
+<<<<<<< HEAD
 from environments.kubernetes.gke.collecting_results.monitoring_api.monitoring_api import (
     convert_int_to_metric_kind,
     get_typed_value,
@@ -41,6 +50,24 @@ from environments.kubernetes.gke.collecting_results.\
         RESOURCE_LABEL_HIERARCHY,
         RESOURCE_TYPE_LABELS,
     )
+=======
+# fmt: off
+from environments.kubernetes.gke.collecting_results.\
+    monitoring_api.monitored_resources import (
+    RESOURCE_LABEL_HIERARCHY,
+    RESOURCE_TYPE_LABELS,
+    ResourceType,
+    get_merging_order,
+    get_monitored_resources_map,
+)
+from environments.kubernetes.gke.collecting_results.monitoring_api.monitoring_api import (
+    MonitoringApi,
+    convert_int_to_metric_kind,
+    convert_to_full_minutes_timestamp,
+    get_typed_value,
+)
+
+>>>>>>> 8941939b2e (instance framework)
 # fmt: on
 
 TIMESTAMP_COLUMN_NAME = "timestamp"
@@ -51,19 +78,74 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
+<<<<<<< HEAD
 def convert_time_series_to_dataframes(
     collected_time_series: List,
 ) -> dict[ResourceType, Dict]:
+=======
+def prepare_metrics_dataframe(
+    project_id: str,
+    cluster_id: str,
+    airflow_namespace_prefix: str,
+    start_date: str,
+    end_date: str,
+) -> pd.DataFrame:
+    """
+    Collects Cloud Monitoring time series metrics in the specified time window
+    for provided GKE cluster and stores them in a single pandas dataframe.
+
+    :param project_id: Google Cloud project of GKE cluster.
+    :type project_id: str
+    :param cluster_id: id of GKE cluster metrics of which should be collected.
+    :type cluster_id: str
+    :param airflow_namespace_prefix: prefix of the namespace where airflow pods are located.
+    :type airflow_namespace_prefix: str
+    :param start_date: start of the time window in "%Y-%m-%d %H:%M:%S.%f" format (UTC timezone).
+    :type start_date: str
+    :param end_date: end of the time window in "%Y-%m-%d %H:%M:%S.%f" format (UTC timezone).
+    :type end_date: str
+
+    :return: pandas Dataframe with Cloud Monitoring metrics data.
+    :rtype: pd.DataFrame
+    """
+    api = MonitoringApi(project_id=project_id)
+
+    monitored_resources_map = get_monitored_resources_map(cluster_id, airflow_namespace_prefix)
+
+    collected_time_series = api.collect_time_series(
+        start_date=start_date,
+        end_date=end_date,
+        monitored_resources_map=monitored_resources_map,
+    )
+
+    resource_data = convert_time_series_to_dataframes(collected_time_series)
+
+    metrics_df = join_resource_dataframes(resource_data, start_date)
+
+    return metrics_df
+
+
+def convert_time_series_to_dataframes(collected_time_series: List) -> Dict[ResourceType, Dict]:
+>>>>>>> 8941939b2e (instance framework)
     """
     Converts a list of time series returned from Cloud Monitoring API into dataframes (separate
     for every ResourceType) and stores them together with additional information in a dictionary.
 
     :param collected_time_series: list of TimeSeries instances.
+<<<<<<< HEAD
 
     :return: a dictionary that for every ResourceType holds dataframe with its time series data,
         resource labels set and a list of metric columns.
     """
 
+=======
+    :type collected_time_series: List
+
+    :return: a dictionary that for every ResourceType holds dataframe with its time series data,
+        resource labels set and a list of metric columns.
+    :rtype: Dict[ResourceType, Dict]
+    """
+>>>>>>> 8941939b2e (instance framework)
     log.info("Converting TimeSeries into dataframes.")
 
     resource_data = {}
@@ -111,7 +193,10 @@ def convert_time_series_to_dataframes(
             )
 
             if to_join_metric_columns:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
                 resource_data[resource_type]["df"][metric_column] = resource_data[resource_type]["df"][
                     f"{metric_column}_x"
                 ].combine(
@@ -141,7 +226,11 @@ def join_metric_columns(value_x: pd.Series, value_y: pd.Series) -> pd.Series:
         return value_x
     if value_x != value_y:
         raise ValueError(
+<<<<<<< HEAD
             "Failed to join metric columns. " "Metric columns have different non-nan values in the same row."
+=======
+            "Failed to join metric columns. Metric columns have different non-nan values in the same row."
+>>>>>>> 8941939b2e (instance framework)
         )
     # if we have not returned by this point, then both columns have the same value in given row
     return value_x
@@ -165,7 +254,10 @@ def join_resource_dataframes(resource_data: Dict[ResourceType, Dict], start_date
     :raises: ValueError: if resource_data dictionary is empty which indicates
         that no TimeSeries data was collected at all
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     if not resource_data:
         raise ValueError("It seems that no TimeSeries data was collected.")
 
@@ -176,7 +268,10 @@ def join_resource_dataframes(resource_data: Dict[ResourceType, Dict], start_date
     resource_types_merging_order = get_merging_order()
 
     for resource_type in resource_types_merging_order:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         if resource_type not in resource_data:
             continue
 
@@ -184,7 +279,10 @@ def join_resource_dataframes(resource_data: Dict[ResourceType, Dict], start_date
 
         # for every resource we check, if its labels are a subset of any other resource's
         for merge_candidate in remaining_resources:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
             if merge_candidate == resource_type:
                 continue
 
@@ -248,7 +346,10 @@ def get_column_order(resource_data: Dict[ResourceType, Dict]) -> List[str]:
     :return: an ordered list of columns.
     :rtype: List[str]
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     metric_columns = []
     collected_resource_columns = set()
 
@@ -301,7 +402,10 @@ def rearrange_metrics_df(metrics_df: pd.DataFrame, columns_order: List[str]) -> 
 
     :raises: ValueError: if columns_order does not contain the same set of columns as metrics_df
     """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
     if not set(columns_order) == set(metrics_df.columns):
         raise ValueError(
             f"Provided columns order: {columns_order} does not contain the same set "

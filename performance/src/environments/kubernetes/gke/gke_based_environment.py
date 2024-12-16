@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -21,12 +24,18 @@ This module contains abstract class representing communication with an environme
 on Google Kubernetes Engine cluster.
 """
 
+<<<<<<< HEAD
+=======
+from __future__ import annotations
+
+>>>>>>> 8941939b2e (instance framework)
 import functools
 import logging
 from abc import ABC
 from collections import OrderedDict
 from typing import Dict, List, Optional, Sequence
 
+<<<<<<< HEAD
 from googleapiclient.discovery import build
 from google.cloud.container_v1.services.cluster_manager import ClusterManagerClient
 from google.cloud.container_v1.types.cluster_service import Cluster
@@ -35,12 +44,18 @@ from pandas import DataFrame
 from environments.base_environment import (
     BaseEnvironment,
     FINISHED_DAG_RUN_STATES,
+=======
+from environments.base_environment import (
+    FINISHED_DAG_RUN_STATES,
+    BaseEnvironment,
+>>>>>>> 8941939b2e (instance framework)
     State,
     is_state,
 )
 from environments.kubernetes.gke.collecting_results.results_dataframe import (
     prepare_results_dataframe,
 )
+<<<<<<< HEAD
 from environments.kubernetes.remote_runner import RemoteRunner
 from environments.kubernetes.gke.gke_remote_runner_provider import (
     GKERemoteRunnerProvider,
@@ -55,6 +70,25 @@ from performance_dags.performance_dag.performance_dag_utils import (
 )
 
 
+=======
+from environments.kubernetes.gke.gke_remote_runner_provider import (
+    DEFAULT_CONTAINER_NAME,
+    DEFAULT_POD_PREFIX,
+    GKERemoteRunnerProvider,
+)
+from environments.kubernetes.remote_runner import RemoteRunner
+from google.cloud.container_v1.services.cluster_manager import ClusterManagerClient
+from google.cloud.container_v1.types.cluster_service import Cluster
+from googleapiclient.discovery import build
+from pandas import DataFrame
+from performance_dags.elastic_dag.elastic_dag_utils import (
+    calculate_number_of_dag_runs,
+    get_dag_prefix,
+    get_dags_count,
+    prepare_elastic_dag_columns,
+)
+
+>>>>>>> 8941939b2e (instance framework)
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -122,7 +156,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
             to the public master endpoint.
         :type use_routing: bool
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         self.remote_runner_provider = GKERemoteRunnerProvider(
             project_id=project_id,
             zone=zone,
@@ -139,7 +176,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         Checks if GKE cluster is ready to communicate with it via kubernetes API. If cluster is
         neither in RUNNING nor RECONCILING states, an exception is raised.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         cluster_state = self.get_gke_cluster_state()
 
         if is_state(cluster_state, Cluster.Status.RUNNING):
@@ -158,7 +198,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         Checks if expected DAGs have already been parsed by scheduler. Moves to the next state
         if all DAGs are present in Airflow database.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dag_id_prefix = self.get_dag_prefix()
 
         expected_dags_count = self.get_dags_count()
@@ -170,7 +213,11 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
 
         if number_of_parsed_dags < expected_dags_count:
             log.info(
+<<<<<<< HEAD
                 "Not all expected DAGs are present on environment %s. " "DAGs parsed: %d/%d. ",
+=======
+                "Not all expected DAGs are present on environment %s. DAGs parsed: %d/%d. ",
+>>>>>>> 8941939b2e (instance framework)
                 self.name,
                 number_of_parsed_dags,
                 expected_dags_count,
@@ -185,7 +232,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         """
         Unpauses the test dags and moves to the next state.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dag_id_prefix = self.get_dag_prefix()
 
         log.info("Unpausing test DAGs on environment %s.", self.name)
@@ -202,7 +252,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         """
         Checks if all test Dag Runs finished their execution.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dag_id_prefix = self.get_dag_prefix()
         expected_dag_runs_count = self.get_expected_dag_runs_count()
 
@@ -214,7 +267,11 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
             )
         if finished_dag_runs_count < expected_dag_runs_count:
             log.info(
+<<<<<<< HEAD
                 "Dag runs are still executing on environment %s. " "Dag runs: %d/%d. ",
+=======
+                "Dag runs are still executing on environment %s. Dag runs: %d/%d. ",
+>>>>>>> 8941939b2e (instance framework)
                 self.name,
                 finished_dag_runs_count,
                 expected_dag_runs_count,
@@ -235,22 +292,44 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
             where the results will be saved (for example a file, GCS blob or BQ table)
         """
         log.info("Collecting results on environment %s.", self.name)
+<<<<<<< HEAD
         environment_columns = self.prepare_environment_columns()
         performance_dag_columns = self.prepare_performance_dag_columns()
+=======
+
+        environment_columns = self.prepare_environment_columns()
+
+        elastic_dag_columns = self.prepare_elastic_dag_columns()
+
+>>>>>>> 8941939b2e (instance framework)
         with self.remote_runner_provider.get_remote_runner(
             pod_prefix=self.pod_prefix, container=self.container_name
         ) as runner:
             airflow_configuration = runner.get_airflow_configuration()
+<<<<<<< HEAD
             airflow_statistics = self.collect_airflow_statistics(runner)
+=======
+
+            airflow_statistics = self.collect_airflow_statistics(runner)
+
+>>>>>>> 8941939b2e (instance framework)
         results_df = prepare_results_dataframe(
             project_id=self.get_gke_project_id(),
             cluster_id=self.get_gke_cluster_id(),
             airflow_namespace_prefix=self.namespace_prefix,
             environment_columns=environment_columns,
+<<<<<<< HEAD
             performance_dag_columns=performance_dag_columns,
             airflow_configuration=airflow_configuration,
             airflow_statistics=airflow_statistics,
         )
+=======
+            elastic_dag_columns=elastic_dag_columns,
+            airflow_configuration=airflow_configuration,
+            airflow_statistics=airflow_statistics,
+        )
+
+>>>>>>> 8941939b2e (instance framework)
         if self.results_columns is not None:
             for column_name in sorted(self.results_columns, reverse=True):
                 if column_name in results_df:
@@ -258,7 +337,13 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
                 else:
                     # add a new column at the beginning of the dataframe
                     results_df.insert(0, column_name, self.results_columns[column_name])
+<<<<<<< HEAD
         results_object_name_components = self.get_results_object_name_components(results_df)
+=======
+
+        results_object_name_components = self.get_results_object_name_components(results_df)
+
+>>>>>>> 8941939b2e (instance framework)
         self.results = (results_df, results_object_name_components)
         return State.DONE
 
@@ -274,7 +359,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
             (like start and end time, average Dag Run duration).
         :rtype: OrderedDict
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dag_id_prefix = self.get_dag_prefix()
 
         test_statistics = runner.collect_dag_run_statistics(
@@ -287,7 +375,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         """
         Collects and returns ids of disks assigned to cluster's nodes.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         # this should be doable even if cluster is reconciling
         list_nodes_result = self.remote_runner_provider.list_nodes()
         gke_node_urls = [node.get("instance") for node in list_nodes_result["items"]]
@@ -344,7 +435,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         """
         Collects the GKE cluster given environment uses.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         response = self.cluster_manager.get_cluster(name=self.get_gke_cluster_name())
 
         # pylint: disable=protected-access
@@ -356,7 +450,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         Gets a string that should be a prefix for every test DAG's dag_id.
         This allows to find Dag Runs of said test DAGs.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dag_prefix = get_dag_prefix(self.get_env_variables())
 
         return dag_prefix
@@ -365,7 +462,10 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         """
         Gets the number of test DAGs.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         dags_count = get_dags_count(self.get_env_variables())
 
         return dags_count
@@ -376,12 +476,19 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
         on given environment.
         This allows to tell when the tests have finished.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         number_of_dag_runs = calculate_number_of_dag_runs(self.get_env_variables())
 
         return number_of_dag_runs
 
+<<<<<<< HEAD
     def prepare_performance_dag_columns(self) -> OrderedDict:
+=======
+    def prepare_elastic_dag_columns(self) -> OrderedDict:
+>>>>>>> 8941939b2e (instance framework)
         """
         Prepares an OrderedDict containing elastic dag configuration that will serve as columns
         for the results dataframe.
@@ -390,8 +497,12 @@ class GKEBasedEnvironment(BaseEnvironment, ABC):
             in order in which they should appear in the results dataframe.
         :rtype: OrderedDict
         """
+<<<<<<< HEAD
 
         return prepare_performance_dag_columns(self.get_env_variables())
+=======
+        return prepare_elastic_dag_columns(self.get_env_variables())
+>>>>>>> 8941939b2e (instance framework)
 
     def get_environment_size(self) -> str:
         """

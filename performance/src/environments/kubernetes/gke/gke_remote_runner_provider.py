@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,6 +20,7 @@
 # under the License.
 
 """
+<<<<<<< HEAD
 Classes dedicated to providing RemoteRunner under GKE specific context.
 """
 
@@ -33,6 +37,25 @@ from kubernetes import client, config
 
 from environments.kubernetes.remote_runner import RemoteRunner
 from environments.kubernetes.gke.gcloud_utils import (
+=======
+Classes dedicated to providing RemoteRunner under GKE specific context
+"""
+
+from __future__ import annotations
+
+import functools
+import logging
+import tempfile
+from contextlib import ExitStack, contextmanager
+from typing import Dict, List, Optional, Tuple
+from unittest import mock
+
+from environments.kubernetes.remote_runner import RemoteRunner
+from google.cloud.container_v1.services.cluster_manager import ClusterManagerClient
+from googleapiclient.discovery import build
+from kubernetes import client, config
+from utils.google_cloud.gcloud_utils import (
+>>>>>>> 8941939b2e (instance framework)
     get_cluster_credentials,
     open_routing_to_gke_node,
     provide_authorized_gcloud,
@@ -42,9 +65,18 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 DEFAULT_NODE_POOL = "default-pool"
+<<<<<<< HEAD
 KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
 
 
+=======
+DEFAULT_POD_PREFIX = "airflow-worker"
+DEFAULT_CONTAINER_NAME = "airflow-worker"
+KUBE_CONFIG_ENV_VAR = "KUBECONFIG"
+
+
+# TODO: this class could be incorporated into GKEBasedEnvironment
+>>>>>>> 8941939b2e (instance framework)
 class GKERemoteRunnerProvider:
     """
     Class dedicated to provide RemoteRunners under GKE context.
@@ -58,7 +90,11 @@ class GKERemoteRunnerProvider:
         cluster_id: str,
         default_namespace_prefix: str,
         use_routing: bool,
+<<<<<<< HEAD
         system_namespaces: Optional[list[str]] = None,
+=======
+        system_namespaces: Optional[List[str]] = None,
+>>>>>>> 8941939b2e (instance framework)
     ) -> None:
         """
         Creates an instance of GKERemoteRunnerProvider.
@@ -76,9 +112,14 @@ class GKERemoteRunnerProvider:
             to the public master endpoint.
         :type use_routing: bool
         :param system_namespaces: list of system namespaces.
+<<<<<<< HEAD
         :type system_namespaces: Optional[list[str]]
         """
 
+=======
+        :type system_namespaces: Optional[List[str]]
+        """
+>>>>>>> 8941939b2e (instance framework)
         self.project_id = project_id
         self.zone = zone
         self.cluster_id = cluster_id
@@ -116,11 +157,21 @@ class GKERemoteRunnerProvider:
         """
         with self.get_kubernetes_apis_in_isolated_context() as (core_api, _, _):
             namespace_prefix = namespace_prefix or self.default_namespace_prefix
+<<<<<<< HEAD
             namespace = self.find_namespace_with_a_prefix(core_api, namespace_prefix, self.system_namespaces)
             yield RemoteRunner(core_api, namespace, pod_prefix, container, default_request_timeout)
 
     @contextmanager
     def get_kubernetes_apis_in_isolated_context(self) -> tuple[client.CoreV1Api, client.AppsV1Api, str]:
+=======
+
+            namespace = self.find_namespace_with_a_prefix(core_api, namespace_prefix, self.system_namespaces)
+
+            yield RemoteRunner(core_api, namespace, pod_prefix, container, default_request_timeout)
+
+    @contextmanager
+    def get_kubernetes_apis_in_isolated_context(self) -> Tuple[client.CoreV1Api, client.AppsV1Api, str]:
+>>>>>>> 8941939b2e (instance framework)
         """
         Context manager that provides kubernetes python clients in an isolated context
         to avoid side-effects for current user. This way we can avoid changing the default
@@ -128,6 +179,10 @@ class GKERemoteRunnerProvider:
         when calling gcloud instead of the account that is currently set up in gcloud.
 
         :yields: a tuple of CoreV1Api and AppsV1Api instances and the proxy
+<<<<<<< HEAD
+=======
+        :type: Tuple[client.CoreV1Api, client.AppsV1Api, str]
+>>>>>>> 8941939b2e (instance framework)
         """
         with ExitStack() as exit_stack:
             # Authorize gcloud tool
@@ -142,16 +197,32 @@ class GKERemoteRunnerProvider:
                 http_port = exit_stack.enter_context(open_routing_to_gke_node(self.node_name, self.zone))
             else:
                 http_port = None
+<<<<<<< HEAD
             log.info("Collecting cluster credentials.")
+=======
+
+            log.info("Collecting cluster credentials.")
+
+>>>>>>> 8941939b2e (instance framework)
             get_cluster_credentials(
                 self.project_id,
                 self.zone,
                 self.cluster_id,
                 private_endpoint=self.use_routing,
             )
+<<<<<<< HEAD
             log.info("Loading kubernetes configuration.")
             config.load_kube_config(config_file=kubectl_temp_conf_file.name, context=self.gke_context)
             proxy = ""
+=======
+
+            log.info("Loading kubernetes configuration.")
+
+            config.load_kube_config(config_file=kubectl_temp_conf_file.name, context=self.gke_context)
+
+            proxy = ""
+
+>>>>>>> 8941939b2e (instance framework)
             if http_port is not None:
                 log.info(
                     "Setting proxy for communication with private cluster on port: %s",
@@ -164,10 +235,18 @@ class GKERemoteRunnerProvider:
 
             core_api = client.CoreV1Api()
             apps_api = client.AppsV1Api()
+<<<<<<< HEAD
             yield core_api, apps_api, proxy
 
     @property
     @functools.lru_cache()
+=======
+
+            yield core_api, apps_api, proxy
+
+    @property
+    @functools.lru_cache
+>>>>>>> 8941939b2e (instance framework)
     def node_name(self) -> str:
         """
         Finds the first node of given cluster without using kubernetes API. Designed to retrieve
@@ -175,10 +254,19 @@ class GKERemoteRunnerProvider:
         result is cached.
 
         :return: name of the first node found.
+<<<<<<< HEAD
         """
 
         log.info("Collecting node of a private cluster.")
         nodes_list = self.list_nodes()
+=======
+        :rtype: str
+        """
+        log.info("Collecting node of a private cluster.")
+
+        nodes_list = self.list_nodes()
+
+>>>>>>> 8941939b2e (instance framework)
         return nodes_list["items"][0]["instance"].split("instances/")[-1]
 
     def list_nodes(self):
@@ -186,17 +274,37 @@ class GKERemoteRunnerProvider:
         Lists nodes of given cluster.
         """
         gke_client = ClusterManagerClient()
+<<<<<<< HEAD
         log.info("Collecting node pool: %s.", self.node_pool_name)
         node_pool_details = gke_client.get_node_pool(name=self.node_pool_name)
         instance_group_url = node_pool_details.instance_group_urls[0]
         instance_group = instance_group_url.split("instanceGroupManagers/")[-1]
         compute_client = build("compute", "v1")
         log.info("Collecting nodes belonging to instance group: %s.", instance_group)
+=======
+
+        log.info("Collecting node pool: %s.", self.node_pool_name)
+
+        node_pool_details = gke_client.get_node_pool(name=self.node_pool_name)
+
+        instance_group_url = node_pool_details.instance_group_urls[0]
+
+        instance_group = instance_group_url.split("instanceGroupManagers/")[-1]
+
+        compute_client = build("compute", "v1")
+
+        log.info("Collecting nodes belonging to instance group: %s.", instance_group)
+
+>>>>>>> 8941939b2e (instance framework)
         list_instances_result = (
             compute_client.instanceGroups()
             .listInstances(project=self.project_id, zone=self.zone, instanceGroup=instance_group)
             .execute()
         )
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8941939b2e (instance framework)
         return list_instances_result
 
     @property
@@ -223,7 +331,11 @@ class GKERemoteRunnerProvider:
     def find_namespace_with_a_prefix(
         core_api: client.api.core_v1_api.CoreV1Api,
         namespace_prefix: str,
+<<<<<<< HEAD
         ignore_namespaces: Optional[list[str]] = None,
+=======
+        ignore_namespaces: Optional[List[str]] = None,
+>>>>>>> 8941939b2e (instance framework)
     ) -> str:
         """
         Finds the namespace which starts with namespace_prefix.
@@ -234,7 +346,11 @@ class GKERemoteRunnerProvider:
         :param namespace_prefix: prefix of the namespace.
         :type namespace_prefix: str
         :param ignore_namespaces: namespaces to ignore.
+<<<<<<< HEAD
         :type ignore_namespaces: Optional[list[str]]
+=======
+        :type ignore_namespaces: Optional[List[str]]
+>>>>>>> 8941939b2e (instance framework)
 
         :return: found namespace.
         :rtype: str
@@ -243,9 +359,19 @@ class GKERemoteRunnerProvider:
         """
         if ignore_namespaces is None:
             ignore_namespaces = []
+<<<<<<< HEAD
         log.info("Collecting namespace prefixed with '%s'.", namespace_prefix)
         response = core_api.list_namespace()
         metadata_list = [item["metadata"] for item in response.to_dict()["items"]]
+=======
+
+        log.info("Collecting namespace prefixed with '%s'.", namespace_prefix)
+
+        response = core_api.list_namespace()
+
+        metadata_list = [item["metadata"] for item in response.to_dict()["items"]]
+
+>>>>>>> 8941939b2e (instance framework)
         namespace = [
             metadata["name"]
             for metadata in metadata_list
@@ -253,6 +379,10 @@ class GKERemoteRunnerProvider:
             and metadata["name"].startswith(namespace_prefix)
             and metadata["name"] not in ignore_namespaces
         ]
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8941939b2e (instance framework)
         if not namespace or len(namespace) > 1:
             raise ValueError(f"Could not find a single namespace starting with '{namespace_prefix}'.")
         return namespace[0]
@@ -270,6 +400,7 @@ class GKERemoteRunnerProvider:
         :type namespace_name: str
         """
         log.info("Creating namespace '%s'.", namespace_name)
+<<<<<<< HEAD
         namespace_body = client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace_name))
         service.create_namespace(namespace_body)
 
@@ -277,24 +408,57 @@ class GKERemoteRunnerProvider:
     def get_deployment(
         apps_api: client.api.apps_v1_api.AppsV1Api, deployment_name: str, namespace: str
     ) -> Optional[dict]:
+=======
+
+        namespace_body = client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace_name))
+
+        service.create_namespace(namespace_body)
+
+    # TODO: this could be moved to the kubernetes directory as it does not depend on gke
+    @staticmethod
+    def get_deployment(
+        apps_api: client.api.apps_v1_api.AppsV1Api, deployment_name: str, namespace: str
+    ) -> Optional[Dict]:
+>>>>>>> 8941939b2e (instance framework)
         """
         Collects the deployment which provided name belonging to specified namespace.
 
         :param apps_api: an instance of kubernetes python apps v1 api which can be used
             to find the deployment.
+<<<<<<< HEAD
         :param deployment_name: name of the deployment.
         :param namespace: namespace of the deployment.
 
         :return: found deployment or None, if no deployment was found.
+=======
+        :type apps_api: client.api.apps_v1_api.AppsV1Api
+        :param deployment_name: name of the deployment.
+        :type deployment_name: str
+        :param namespace: namespace of the deployment.
+        :type namespace: str
+
+        :return: found deployment or None, if no deployment was found.
+        :rtype: Dict
+>>>>>>> 8941939b2e (instance framework)
         """
         log.info(
             "Collecting deployment '%s' from namespace '%s'.",
             deployment_name,
             namespace,
         )
+<<<<<<< HEAD
         response = apps_api.list_namespaced_deployment(namespace)
         metadata_list = [item["metadata"] for item in response.to_dict()["items"]]
         deployments = [metadata for metadata in metadata_list if metadata["name"] == deployment_name]
+=======
+
+        response = apps_api.list_namespaced_deployment(namespace)
+
+        metadata_list = [item["metadata"] for item in response.to_dict()["items"]]
+
+        deployments = [metadata for metadata in metadata_list if metadata["name"] == deployment_name]
+
+>>>>>>> 8941939b2e (instance framework)
         if not deployments:
             return None
         return deployments[0]

@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #
+=======
+>>>>>>> 8941939b2e (instance framework)
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -19,6 +22,7 @@
 """
 This module contains the definition of an abstract class representing base requirements for
 environment needed in order to run performance tests on it.
+<<<<<<< HEAD
 An environment class serves two main purposes:
 - implementation of API that changes state of tested environment e.g. by creating or
   deleting it.
@@ -28,6 +32,15 @@ An environment class serves two main purposes:
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Union
+=======
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from enum import Enum
+from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+>>>>>>> 8941939b2e (instance framework)
 
 from pandas import DataFrame
 
@@ -41,10 +54,20 @@ def is_state(state: str, expected_states: Union[Enum, Tuple[Enum, ...]]) -> bool
     Checks if provided state is equal to any of expected_states.
 
     :param state: string with the state of environment or cluster.
+<<<<<<< HEAD
     :param expected_states: a single instance or a tuple of Enum instances to compare
         the state with.
 
     :return: True if state matches at least one value from expected_states and False otherwise.
+=======
+    :type state: str
+    :param expected_states: a single instance or a tuple of Enum instances to compare
+        the state with.
+    :type expected_states: Union[Enum, Tuple[Enum, ...]
+
+    :return: True if state matches at least one value from expected_states and False otherwise.
+    :rtype: bool
+>>>>>>> 8941939b2e (instance framework)
     """
     if isinstance(expected_states, Enum):
         expected_states = (expected_states,)
@@ -115,7 +138,11 @@ class BaseEnvironment(ABC):
 
     @property
     @abstractmethod
+<<<<<<< HEAD
     def states_map(self) -> dict[State, Action]:
+=======
+    def states_map(self) -> Dict[State, Action]:
+>>>>>>> 8941939b2e (instance framework)
         """
         This method should return a map that for every applicable state holds an instance of Action
         class.
@@ -171,7 +198,10 @@ class BaseEnvironment(ABC):
         """
         Returns method assigned to given state, if any.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8941939b2e (instance framework)
         return self.states_map[self.state].method if self.state in self.states_map else None
 
     def get_state_wait_time(self) -> Optional[float]:
@@ -187,16 +217,24 @@ class BaseEnvironment(ABC):
         cls,
         number_of_copies: int,
         environment_specification_file_path: str,
+<<<<<<< HEAD
         performance_dag_config_file_path: Optional[str] = None,
         jinja_variables_dict: Optional[Dict[str, str]] = None,
         randomize_environment_name: bool = True,
     ) -> tuple[list[tuple[dict, str]], list[tuple[dict, str]]]:
+=======
+        elastic_dag_config_file_path: Optional[str] = None,
+        jinja_variables_dict: Optional[Dict[str, str]] = None,
+        randomize_environment_name: bool = True,
+    ) -> Tuple[List[Tuple[Dict, str]], List[Tuple[Dict, str]]]:
+>>>>>>> 8941939b2e (instance framework)
         """
         This method should load the specification using provided arguments and duplicate it into
         number_of_copies duplicates, preferably in such a manner so that these duplicates can be
         run in parallel (provided that's possible).
 
         :param number_of_copies: number of copies of the specification that should be prepared.
+<<<<<<< HEAD
         :param environment_specification_file_path: path to the file with specification
             of environment to duplicate.
         :param performance_dag_config_file_path: optional path to file with configuration
@@ -207,12 +245,43 @@ class BaseEnvironment(ABC):
             present in the template which do not have default values defined.
         :param randomize_environment_name: if set to True, then a random part will be added to
             environment name of every specification copy.
+=======
+        :type number_of_copies: int
+        :param environment_specification_file_path: path to the file with specification
+            of environment to duplicate.
+        :type environment_specification_file_path: str
+        :param elastic_dag_config_file_path: optional path to file with configuration
+            for elastic DAG. Environment variables from this file will override the ones
+            from environment_specification_file_path.
+        :type elastic_dag_config_file_path: str
+        :param jinja_variables_dict: a dictionary with values for jinja variables to use
+            when filling the templated specification file. Must contain all variables
+            present in the template which do not have default values defined.
+        :type jinja_variables_dict: Dict[str, str]
+        :param randomize_environment_name: if set to True, then a random part will be added to
+            environment name of every specification copy.
+        :type randomize_environment_name: bool
+>>>>>>> 8941939b2e (instance framework)
 
         :return: a tuple of two lists. Both lists must contain pairs consisting of specification
             dicts and environment names:
             - first list contains specifications that can be run in parallel
             - second list contains specifications that should be run sequentially
+<<<<<<< HEAD
+=======
+        :rtype: Tuple[List[Tuple[Dict, str]], List[Tuple[Dict, str]]]
+>>>>>>> 8941939b2e (instance framework)
         """
         pass
 
     # pylint: enable=too-many-arguments
+<<<<<<< HEAD
+=======
+
+    @abstractmethod
+    def delete_environment(self) -> None:
+        """
+        This method should delete the test environment.
+        """
+        pass
+>>>>>>> 8941939b2e (instance framework)
